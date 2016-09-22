@@ -1,6 +1,13 @@
 {
     "name": "entity-space",
     "version": "0.1.0",
+    "description": "Client-side data caching library providing simple querying",
+    "author": "kukeiko",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kukeiko/entity-space"
+    },
     "typings": "./dist/index.d.ts",
     "main": "./dist/index",
     "scripts": {
