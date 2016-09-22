@@ -1,0 +1,19 @@
+{
+    "rules": {
+        "class-name": true,
+        "no-trailing-whitespace": true,
+        "no-unreachable": true,
+        "no-unused-expression": true,
+        "no-unused-variable": true,
+        "no-string-literal": true,
+        "no-var-keyword": true,
+        "eofline": true,
+        "no-use-before-declare": true,
+        "member-ordering": [
+            true,
+            {
+                "order": "fields-first"
+            }
+        ]
+    }
+}
