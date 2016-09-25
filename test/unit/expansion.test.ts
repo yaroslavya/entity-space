@@ -1,4 +1,4 @@
-/// <reference path="../../typings/index.d.ts" />
+/// <reference path="../../node_modules/@types/jasmine/index.d.ts" />
 import { Expansion } from "../../src";
 
 import {

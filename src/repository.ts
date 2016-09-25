@@ -11,28 +11,43 @@ export interface IRepository<K, V> {
     saveMany(entity: V[]): Promise<Map<K, V>>;
 }
 
-export class GenericRepository<K, V> implements IRepository<K, V> {
+export module GenericRepository {
+    export interface IMapper<V, M> {
+        toInternal: (entity: M) => V;
+        toExposed: (entity: V) => M;
+    }
+}
+
+/**
+ * K = primitive type of id
+ * V = actual type stored
+ * M = type exposed to consumer
+ */
+export class GenericRepository<K, V, M> implements IRepository<K, M> {
+    protected _workspace: Workspace;
     private _entityType: Metadata;
     private _executedQueries = new Map<string, Query>();
-    private _mapper: (dto: any) => V;
+    private _mapper: GenericRepository.IMapper<V, M>;
     private _queryExecuter: (q: Query) => Promise<any>;
-    protected _workspace: Workspace;
 
     constructor(args: {
         entityType: Metadata;
         queryExecuter: (q: Query) => Promise<any>;
         workspace: Workspace;
-        mapper?: (dto: any) => V;
+        mapper?: GenericRepository.IMapper<V, M>;
     }) {
         this._entityType = args.entityType;
         this._queryExecuter = args.queryExecuter;
         this._workspace = args.workspace;
-        this._mapper = args.mapper || ((dto: any) => dto);
+        this._mapper = args.mapper || {
+            toInternal: (entity: M) => entity as any as V,
+            toExposed: (entity: V) => entity as any as M
+        };
     }
 
     all(args: {
         expansion?: string;
-    }): Promise<Map<K, V>> {
+    }): Promise<Map<K, M>> {
         return this._execute(new Query.All({
             entityType: this._entityType,
             expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : []
@@ -42,7 +57,7 @@ export class GenericRepository<K, V> implements IRepository<K, V> {
     get(args: {
         key: K;
         expansion?: string;
-    }): Promise<V> {
+    }): Promise<M> {
         return this._execute(new Query.ByKey({
             entityType: this._entityType,
             expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
@@ -53,7 +68,7 @@ export class GenericRepository<K, V> implements IRepository<K, V> {
     getMany(args: {
         keys: K[];
         expansion?: string;
-    }): Promise<Map<K, V>> {
+    }): Promise<Map<K, M>> {
         return this._execute(new Query.ByKeys({
             entityType: this._entityType,
             expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
@@ -61,15 +76,15 @@ export class GenericRepository<K, V> implements IRepository<K, V> {
         }));
     }
 
-    save(entity: V): Promise<V> {
+    save(entity: M): Promise<M> {
         throw "NotImplemented";
     }
 
-    saveMany(entity: V[]): Promise<Map<K, V>> {
+    saveMany(entity: M[]): Promise<Map<K, M>> {
         throw "NotImplemented";
     }
 
-    protected _execute(query: Query): Promise<Map<K, V>> {
+    protected _execute(query: Query): Promise<Map<K, M>> {
         return new Promise<Map<any, any>>((resolve, reject) => {
             if (this._executedQueries.has(query.toString()) || this._hasSupersetQueryOf(query)) {
                 this._workspace.execute(query).then(resolve, reject);
@@ -93,7 +108,7 @@ export class GenericRepository<K, V> implements IRepository<K, V> {
                     }
                 }, reject);
             }
-        }).then(result => result._map(x => this._mapper(x)));
+        }).then(result => result._map(x => this._mapper.toExposed(x)));
     }
 
     private _hasSupersetQueryOf(query: Query): boolean {
