@@ -86,7 +86,7 @@ export class Workspace {
             let value = args.entity[ex.property.name];
             let otherType = ex.property.otherType;
 
-            if (value instanceof Array && (value as []).length > 0) {
+            if (value instanceof Array && (value as any[]).length > 0) {
                 let keyName = (ex.property as Metadata.Collection).backReferenceKeyName;
                 let otherCache = this._caches.get(otherType.name);
                 otherCache.removeByIndex(keyName, value[0][keyName]);
