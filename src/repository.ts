@@ -25,7 +25,7 @@ export module GenericRepository {
  */
 export class GenericRepository<K, V, M> implements IRepository<K, M> {
     protected _workspace: Workspace;
-    private _entityType: Metadata;
+    protected _entityType: Metadata;
     private _executedQueries = new Map<string, Query>();
     private _mapper: GenericRepository.IMapper<V, M>;
     private _queryExecuter: (q: Query) => Promise<any>;
