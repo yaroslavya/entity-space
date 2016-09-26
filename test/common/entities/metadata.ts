@@ -3,7 +3,7 @@ import { Metadata } from "../../../src";
 let _albumMetadata = new Metadata({
     name: "Album",
     primaryKey: { name: "id" },
-    primitives: [{ name: "name" }]
+    primitives: [{ name: "name", index: true }]
 });
 
 let _artistMetadata = new Metadata({

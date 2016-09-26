@@ -57,6 +57,12 @@ export class Workspace {
                 type: q.entityType.name,
                 expansion: q.expansions
             });
+        } else if (q instanceof Query.ByIndexes) {
+            result = this.byIndexes({
+                indexes: q.indexes,
+                type: q.entityType.name,
+                expansion: q.expansions
+            });
         }
 
         return Promise.resolve(result)
@@ -194,6 +200,34 @@ export class Workspace {
         expansion?: string | Expansion[];
     }): Map<any, any> {
         let items = this._caches.get(args.type).byIndex(args.index, args.value)._map(i => _.cloneDeep(i));
+        if (items.size == 0) return items;
+
+        let metadata = this._metadata.get(args.type);
+        let expansions = new Array<Expansion>();
+
+        if (args.expansion != null) {
+            if (args.expansion instanceof Array) {
+                expansions = args.expansion as Expansion[];
+            } else {
+                expansions = Expansion.parse(metadata, args.expansion as string);
+            }
+        }
+
+        this._expand({
+            items: items,
+            ownerMetadata: metadata,
+            expansions: expansions
+        });
+
+        return items;
+    }
+
+    byIndexes<T>(args: {
+        indexes: Map<string, any>;
+        type: string;
+        expansion?: string | Expansion[];
+    }): Map<any, any> {
+        let items = this._caches.get(args.type).byIndexes(args.indexes)._map(i => _.cloneDeep(i));
         if (items.size == 0) return items;
 
         let metadata = this._metadata.get(args.type);

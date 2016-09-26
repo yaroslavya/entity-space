@@ -170,7 +170,65 @@ export module Query {
         }
 
         toString(): string {
-            let str = `${this.entityType.name}(#${this.index}: ${this.value})`;
+            let str = `${this.entityType.name}(#${this.index}:${this.value})`;
+
+            if (this.expansions.length > 0) {
+                str += "/";
+
+                if (this.expansions.length > 1) str += "{";
+                str += this.expansions.map(exp => exp.toString()).join(",");
+                if (this.expansions.length > 1) str += "}";
+            }
+
+            return str;
+        }
+    }
+
+    export interface IStringable {
+        toString(): string;
+    }
+
+    export class ByIndexes extends Query {
+        private _indexes = new Map<string, IStringable>();
+        get indexes(): Map<string, IStringable> { return this._indexes; }
+
+        constructor(args: {
+            indexes: Map<string, IStringable>;
+            entityType: Metadata;
+            expansions?: Expansion[];
+        }) {
+            super(args);
+            if (args.indexes.size == 0) {
+                throw `a ByIndexes query can't have zero index/values pairs`;
+            }
+
+            this._indexes = args.indexes._copy();
+        }
+
+        isSuperSetOf(other: Query): boolean {
+            if (other.entityType != this.entityType) return false;
+            if (other instanceof ByIndex && this.indexes.has(other.index) && this.indexes.get(other.index) == other.value) {
+                return Expansion.isSuperset(this.expansions, other.expansions)
+            }
+            if (other instanceof ByIndexes) {
+                let otherDiffers = false;
+
+                other.indexes.forEach((v, i) => {
+                    if (!this.indexes.has(i) || this.indexes.get(i) != v) {
+                        otherDiffers = true;
+                    }
+                });
+            }
+
+            return false;
+        }
+
+        toString(): string {
+            let indexValues = new Array<string>();
+            this.indexes.forEach((v, i) => indexValues.push(`#${i}:${v}`));
+            indexValues.sort();
+
+            let str = `${this.entityType.name}(${indexValues.join(",")})`;
 
             if (this.expansions.length > 0) {
                 str += "/";
