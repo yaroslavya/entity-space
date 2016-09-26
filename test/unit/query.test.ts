@@ -161,6 +161,30 @@ describe("data-query", () => {
 
             expect(q.toString()).toEqual("Artist(64,1337,42,23)/albums/{songs,tags}");
         });
+
+        it("byIndex: Artist(theIndex:theValue)/albums/{songs,tags}", () => {
+            let q = new Query.ByIndex({
+                index: "theIndex",
+                value: "theValue",
+                entityType: artistMetadata,
+                expansions: Expansion.parse(artistMetadata, `albums/{songs,tags}`)
+            });
+
+            expect(q.toString()).toEqual("Artist(theIndex:theValue)/albums/{songs,tags}");
+        });
+
+        it("byIndexes: Artist(khaz:64,mo:dan)/albums/{songs,tags}", () => {
+            let q = new Query.ByIndexes({
+                indexes: {
+                    khaz: 64,
+                    mo: "dan"
+                },
+                entityType: artistMetadata,
+                expansions: Expansion.parse(artistMetadata, `albums/{songs,tags}`)
+            });
+
+            expect(q.toString()).toEqual("Artist(khaz:64,mo:dan)/albums/{songs,tags}");
+        });
     });
 
     describe("extract()", () => {

@@ -27,20 +27,6 @@ export abstract class Query {
         return other.isSuperSetOf(this);
     }
 
-    toString(): string {
-        let str = this.entityType.name;
-
-        if (this.expansions.length > 0) {
-            str += "/";
-
-            if (this.expansions.length > 1) str += "{";
-            str += this.expansions.map(exp => exp.toString()).join(",");
-            if (this.expansions.length > 1) str += "}";
-        }
-
-        return str;
-    }
-
     equals(other: Query): boolean {
         return Query.equals(this, other);
     }
@@ -51,6 +37,32 @@ export abstract class Query {
         this.expansions.forEach(exp => exp.extract(props).forEach(extracted => extractions = extractions.concat(extracted)));
 
         return extractions;
+    }
+
+    toString(): string {
+        return this._toString();
+    }
+
+    protected _toString(args?: {
+        suffix?: any;
+    }): string {
+        args = args || {} as any;
+
+        let str = this.entityType.name;
+
+        if (args.suffix != null) {
+            str += `(${args.suffix})`;
+        }
+
+        if (this.expansions.length > 0) {
+            str += "/";
+
+            if (this.expansions.length > 1) str += "{";
+            str += this.expansions.map(exp => exp.toString()).join(",");
+            if (this.expansions.length > 1) str += "}";
+        }
+
+        return str;
     }
 }
 
@@ -87,17 +99,9 @@ export module Query {
         }
 
         toString(): string {
-            let str = `${this.entityType.name}(${this.key})`;
-
-            if (this.expansions.length > 0) {
-                str += "/";
-
-                if (this.expansions.length > 1) str += "{";
-                str += this.expansions.map(exp => exp.toString()).join(",");
-                if (this.expansions.length > 1) str += "}";
-            }
-
-            return str;
+            return this._toString({
+                suffix: this.key
+            });
         }
     }
 
@@ -127,17 +131,9 @@ export module Query {
         }
 
         toString(): string {
-            let str = `${this.entityType.name}(${this.keys.join(",")})`;
-
-            if (this.expansions.length > 0) {
-                str += "/";
-
-                if (this.expansions.length > 1) str += "{";
-                str += this.expansions.map(exp => exp.toString()).join(",");
-                if (this.expansions.length > 1) str += "}";
-            }
-
-            return str;
+            return this._toString({
+                suffix: this.keys.join(",")
+            });
         }
     }
 
@@ -170,17 +166,9 @@ export module Query {
         }
 
         toString(): string {
-            let str = `${this.entityType.name}(#${this.index}:${this.value})`;
-
-            if (this.expansions.length > 0) {
-                str += "/";
-
-                if (this.expansions.length > 1) str += "{";
-                str += this.expansions.map(exp => exp.toString()).join(",");
-                if (this.expansions.length > 1) str += "}";
-            }
-
-            return str;
+            return this._toString({
+                suffix: `${this.index}:${this.value}`
+            });
         }
     }
 
@@ -193,16 +181,29 @@ export module Query {
         get indexes(): Map<string, IStringable> { return this._indexes; }
 
         constructor(args: {
-            indexes: Map<string, IStringable>;
+            indexes: Map<string, IStringable> | { [key: string]: IStringable };
             entityType: Metadata;
             expansions?: Expansion[];
         }) {
             super(args);
-            if (args.indexes.size == 0) {
+
+            let indexes: Map<string, IStringable>;
+
+            if (args.indexes instanceof Map) {
+                indexes = args.indexes;
+            } else {
+                indexes = new Map<string, IStringable>();
+
+                for (let k in args.indexes) {
+                    indexes.set(k, args.indexes[k]);
+                }
+            }
+
+            if (indexes.size == 0) {
                 throw `a ByIndexes query can't have zero index/values pairs`;
             }
 
-            this._indexes = args.indexes._copy();
+            this._indexes = indexes._copy();
         }
 
         isSuperSetOf(other: Query): boolean {
@@ -225,20 +226,12 @@ export module Query {
 
         toString(): string {
             let indexValues = new Array<string>();
-            this.indexes.forEach((v, i) => indexValues.push(`#${i}:${v}`));
+            this.indexes.forEach((v, i) => indexValues.push(`${i}:${v}`));
             indexValues.sort();
 
-            let str = `${this.entityType.name}(${indexValues.join(",")})`;
-
-            if (this.expansions.length > 0) {
-                str += "/";
-
-                if (this.expansions.length > 1) str += "{";
-                str += this.expansions.map(exp => exp.toString()).join(",");
-                if (this.expansions.length > 1) str += "}";
-            }
-
-            return str;
+            return this._toString({
+                suffix: indexValues.join(",")
+            });
         }
     }
 }
