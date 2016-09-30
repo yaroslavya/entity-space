@@ -256,6 +256,18 @@ export class Workspace {
         return items;
     }
 
+    remove(args: {
+        item: any;
+        type: string;
+    }) : void {
+        let cache = this._caches.get(args.type);
+        if(cache == null) {
+            throw `can't remove item: type ${args.type} is not a known type`;
+        }
+
+        cache.remove(args.item);
+    }
+
     /**
      * The code of this function was once duplicated @ get(), all() and ofIndex() functions.
      * Interestingly enough it was faster that way by about 15% (@ Chrome).

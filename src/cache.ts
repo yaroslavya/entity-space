@@ -77,6 +77,12 @@ export class Cache<K, V> {
         ix.clear(value);
     }
 
+    remove(item: V): void {
+        this._pkMap.delete(this._getKey(item));
+
+        // todo: remove from indexes
+    }
+
     add(item: V): V {
         let key = this._getKey(item);
         if (key == null) throw "can't add item to cache with undefined/null key";
