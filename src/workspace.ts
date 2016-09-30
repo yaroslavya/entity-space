@@ -28,6 +28,10 @@ export class Workspace {
         this._metadata.set(metadata.name, metadata);
     }
 
+    addTypes(metadata: Metadata[]): void {
+        metadata.forEach(m => this.addType(m));
+    }
+
     execute(q: Query): Promise<Map<any, any>> {
         let result: Map<any, any> = new Map();
 
