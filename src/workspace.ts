@@ -282,7 +282,7 @@ export class Workspace {
                     value: item[pkName],
                     type: otherType.name,
                     expansion: expansion.expansions
-                }));
+                })._toArray());
             }
         });
     }
