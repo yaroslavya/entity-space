@@ -11,7 +11,7 @@ export interface IRepository<K, V> {
     saveMany(entity: V[]): Promise<Map<K, V>>;
 }
 
-export module GenericRepository {
+export module Repository {
     export interface IMapper<V, M> {
         toInternal: (entity: M) => V;
         toExposed: (entity: V) => M;
@@ -23,18 +23,18 @@ export module GenericRepository {
  * V = actual type stored
  * M = type exposed to consumer
  */
-export class GenericRepository<K, V, M> implements IRepository<K, M> {
+export class Repository<K, V, M> implements IRepository<K, M> {
     protected _workspace: Workspace;
     protected _entityType: Metadata;
     private _executedQueries = new Map<string, Query>();
-    private _mapper: GenericRepository.IMapper<V, M>;
+    private _mapper: Repository.IMapper<V, M>;
     private _queryExecuter: (q: Query) => Promise<any>;
 
     constructor(args: {
         entityType: Metadata;
         queryExecuter: (q: Query) => Promise<any>;
         workspace: Workspace;
-        mapper?: GenericRepository.IMapper<V, M>;
+        mapper?: Repository.IMapper<V, M>;
     }) {
         this._entityType = args.entityType;
         this._queryExecuter = args.queryExecuter;
