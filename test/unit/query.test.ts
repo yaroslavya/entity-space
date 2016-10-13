@@ -188,6 +188,27 @@ describe("data-query", () => {
     });
 
     describe("extract()", () => {
+        it("should extract 1st level expansion", () => {
+            // arrange
+            let q = new Query.All({
+                entityType: artistMetadata,
+                expansions: Expansion.parse(artistMetadata, "albums/{songs/album,tags}")
+            });
+
+            let albumsProp = artistMetadata.navigationProperties.find(np => np.name == "albums");
+
+            // act
+            let [withoutAlbumsQuery, extracted] = q.extract([albumsProp]);
+
+            // assert
+            expect(q.toString()).toEqual("Artist/albums/{songs/album,tags}");
+            expect(withoutAlbumsQuery.toString()).toEqual("Artist");
+            expect(extracted.length).toEqual(1);
+            expect(extracted[0].path).toEqual(null);
+            expect(extracted[0].extracted.property).toEqual(albumsProp);
+            expect(extracted[0].extracted.toString()).toEqual("albums/{songs/album,tags}");
+        });
+
         it("should extract 2nd level expansions", () => {
             // arrange
             let q = new Query.All({

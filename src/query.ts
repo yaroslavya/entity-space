@@ -38,10 +38,16 @@ export abstract class Query {
         let expansions = new Array<Expansion>();
 
         this._expansions.forEach(exp => {
-            let [subExp, subExtractions] = exp.extract(props);
+            if (props.includes(exp.property)) {
+                extractions.push(new Expansion.Extraction({
+                    extracted: exp
+                }));
+            } else {
+                let [subExp, subExtractions] = exp.extract(props);
 
-            expansions.push(subExp);
-            extractions = extractions.concat(subExtractions);
+                expansions.push(subExp);
+                extractions = extractions.concat(subExtractions);
+            }
         });
 
 
