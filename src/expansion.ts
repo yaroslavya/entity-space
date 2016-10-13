@@ -1,4 +1,6 @@
 import { Metadata } from "./metadata";
+import { Path } from "./path";
+import { Extraction } from "./extraction";
 
 /**
  * An expansion defines which navigation properties should be considered for an operation.
@@ -120,14 +122,14 @@ export class Expansion {
      * 
      * Returns the reduced expansion and the extractions.
      */
-    extract(props: Metadata.NavigationProperty[]): [Expansion, Expansion.Extraction[]] {
-        let extractions = new Array<Expansion.Extraction>();
+    extract(props: Metadata.NavigationProperty[]): [Expansion, Extraction[]] {
+        let extractions = new Array<Extraction>();
         let expansions = new Array<Expansion>();
 
         this._expansions.forEach(exp => {
             if (props.includes(exp.property)) {
-                extractions.push(new Expansion.Extraction({
-                    path: new Expansion.Path({ property: this.property }),
+                extractions.push(new Extraction({
+                    path: new Path({ property: this.property }),
                     extracted: exp
                 }));
             } else {
@@ -136,8 +138,8 @@ export class Expansion {
                 expansions.push(subExpansion);
 
                 subExtracted.forEach(ext => {
-                    extractions.push(new Expansion.Extraction({
-                        path: new Expansion.Path({
+                    extractions.push(new Extraction({
+                        path: new Path({
                             property: this.property,
                             next: ext.path
                         }),
@@ -153,13 +155,13 @@ export class Expansion {
         }), extractions];
     }
 
-    toPaths(): Expansion.Path[] {
+    toPaths(): Path[] {
         if (this.expansions.length == 0) {
-            return [new Expansion.Path({ property: this.property })];
+            return [new Path({ property: this.property })];
         }
 
-        let paths = new Array<Expansion.Path>();
-        this.expansions.forEach(exp => exp.toPaths().forEach(p => paths.push(new Expansion.Path({ property: this.property, next: p }))));
+        let paths = new Array<Path>();
+        this.expansions.forEach(exp => exp.toPaths().forEach(p => paths.push(new Path({ property: this.property, next: p }))));
 
         return paths;
     }
@@ -243,41 +245,5 @@ export module Expansion {
             offset = c + 1;
             return e;
         });
-    }
-
-    export class Extraction {
-        private _path: Path;
-        get path(): Path { return this._path };
-
-        private _extracted: Expansion;
-        get extracted(): Expansion { return this._extracted };
-
-        constructor(args: {
-            path?: Path;
-            extracted: Expansion;
-        }) {
-            this._path = args.path || null;
-            this._extracted = args.extracted;
-        }
-    }
-
-    export class Path {
-        private _property: Metadata.NavigationProperty;
-        get property(): Metadata.NavigationProperty { return this._property };
-
-        private _next: Path;
-        get next(): Path { return this._next };
-
-        constructor(args: {
-            property: Metadata.NavigationProperty;
-            next?: Path;
-        }) {
-            this._property = args.property;
-            this._next = args.next || null;
-        }
-
-        toString(): string {
-            return this.next == null ? this.property.name : `${this.property.name}/${this.next.toString()}`;
-        }
     }
 }

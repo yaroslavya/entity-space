@@ -1,6 +1,7 @@
 import * as _ from "lodash";
 import { Metadata } from "./metadata";
 import { Expansion } from "./expansion";
+import { Extraction } from "./extraction";
 
 export abstract class Query {
     private _entityType: Metadata;
@@ -33,13 +34,13 @@ export abstract class Query {
         return Query.equals(this, other);
     }
 
-    extract(props: Metadata.NavigationProperty[]): [Query, Expansion.Extraction[]] {
-        let extractions = new Array<Expansion.Extraction>();
+    extract(props: Metadata.NavigationProperty[]): [Query, Extraction[]] {
+        let extractions = new Array<Extraction>();
         let expansions = new Array<Expansion>();
 
         this._expansions.forEach(exp => {
             if (props.includes(exp.property)) {
-                extractions.push(new Expansion.Extraction({
+                extractions.push(new Extraction({
                     extracted: exp
                 }));
             } else {
