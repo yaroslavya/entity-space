@@ -15,6 +15,8 @@ export abstract class Query {
     }) {
         this._entityType = args.entityType;
         this._expansions = (args.expansions || []).slice().sort((a, b) => a.property.name < b.property.name ? -1 : 1);
+
+        Object.freeze(this._expansions);
     }
 
     static equals(a: Query, b: Query): boolean {
@@ -31,12 +33,33 @@ export abstract class Query {
         return Query.equals(this, other);
     }
 
-    extract(props: Metadata.NavigationProperty[]): Expansion.Extraction[] {
+    extract(props: Metadata.NavigationProperty[]): [Query, Expansion.Extraction[]] {
         let extractions = new Array<Expansion.Extraction>();
+        let expansions = new Array<Expansion>();
 
-        this.expansions.forEach(exp => exp.extract(props).forEach(extracted => extractions = extractions.concat(extracted)));
+        this._expansions.forEach(exp => {
+            let [subExp, subExtractions] = exp.extract(props);
 
-        return extractions;
+            expansions.push(subExp);
+            extractions = extractions.concat(subExtractions);
+        });
+
+
+        let q: Query;
+
+        if (this instanceof Query.ByKey) {
+            q = new Query.ByKey({ key: this.key, entityType: this.entityType, expansions: expansions });
+        } else if (this instanceof Query.ByKeys) {
+            q = new Query.ByKeys({ keys: this.keys, entityType: this.entityType, expansions: expansions });
+        } else if (this instanceof Query.ByIndex) {
+            q = new Query.ByIndex({ index: this.index, value: this.value, entityType: this.entityType, expansions: expansions });
+        } else if (this instanceof Query.ByIndexes) {
+            q = new Query.ByIndexes({ indexes: this.indexes, entityType: this.entityType, expansions: expansions });
+        } else if (this instanceof Query.All) {
+            q = new Query.All({ entityType: this.entityType, expansions: expansions });
+        }
+
+        return [q, extractions];
     }
 
     toString(): string {
@@ -190,7 +213,7 @@ export module Query {
             let indexes: Map<string, IStringable>;
 
             if (args.indexes instanceof Map) {
-                indexes = args.indexes;
+                indexes = args.indexes._copy();
             } else {
                 indexes = new Map<string, IStringable>();
 

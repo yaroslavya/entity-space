@@ -2,13 +2,14 @@ import { Expansion } from "../../src";
 
 import {
     albumMetadata,
-    artistMetadata
+    artistMetadata,
+    songMetadata
 } from "../common/entities";
 
 describe("expansion", () => {
     describe("toPaths()", () => {
         it("albums/{songs/album/{artist,songs},tags} should equal albums/songs/album/artist,albums/songs/album/songs,albums/tags", () => {
-            let exp = Expansion.parse(artistMetadata, `albums/{songs/album/{artist,songs},tags}`);
+            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/{artist,songs},tags}");
             let paths = exp[0].toPaths();
 
             expect(paths.map(p => p.toString()).join(",")).toEqual("albums/songs/album/artist,albums/songs/album/songs,albums/tags");
@@ -17,34 +18,68 @@ describe("expansion", () => {
 
     describe("toString()", () => {
         it("albums should equal albums", () => {
-            let exp = Expansion.parse(artistMetadata, `albums`);
+            let exp = Expansion.parse(artistMetadata, "albums");
 
             expect(exp.toString()).toEqual("albums");
         });
 
         it("albums/songs should equal albums/songs", () => {
-            let exp = Expansion.parse(artistMetadata, `albums/songs`);
+            let exp = Expansion.parse(artistMetadata, "albums/songs");
 
             expect(exp.toString()).toEqual("albums/songs");
         });
 
         it("albums/{songs,tags} should equal albums/{songs,tags}", () => {
-            let exp = Expansion.parse(artistMetadata, `albums/{songs,tags}`);
+            let exp = Expansion.parse(artistMetadata, "albums/{songs,tags}");
 
             expect(exp.toString()).toEqual("albums/{songs,tags}");
         });
     });
 
     describe("extract()", () => {
-        it("should work", () => {
-            let exp = Expansion.parse(artistMetadata, `albums/{songs/album/artist,tags}`);
-            // let tagsProp = albumMetadata.navigationProperties.find(n => n.name == "tags");
-            // let songsAlbumProp = songMetadata.navigationProperties.find(n => n.name == "album");
-            let artistProp = albumMetadata.navigationProperties.find(n => n.name == "artist");
-            let extracted = exp[0].extract([artistProp])[0];
+        it("should extract 1st level expansion", () => {
+            // arrange
+            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/artist,tags}");
+            let songsProp = albumMetadata.navigationProperties.find(n => n.name == "songs");
 
-            console.log(extracted.path.toString());
-            console.log(extracted.extracted.toString());
+            // act
+            let [reducedExp, extracted] = exp[0].extract([songsProp]);
+
+            // assert
+            expect(reducedExp.toString()).toEqual("albums/tags");
+            expect(extracted.length).toEqual(1);
+            expect(extracted[0].path.toString()).toEqual("albums");
+            expect(extracted[0].extracted.property).toEqual(songsProp);
+            expect(extracted[0].extracted.toString()).toEqual("songs/album/artist");
+        });
+
+        it("should extract 2nd level expansion", () => {
+            // arrange
+            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/artist,tags}");
+            let albumProp = songMetadata.navigationProperties.find(n => n.name == "album");
+
+            // act
+            let [reducedExp, extracted] = exp[0].extract([albumProp]);
+
+            // assert
+            expect(reducedExp.toString()).toEqual("albums/{songs,tags}");
+            expect(extracted.length).toEqual(1);
+            expect(extracted[0].path.toString()).toEqual("albums/songs");
+            expect(extracted[0].extracted.property).toEqual(albumProp);
+            expect(extracted[0].extracted.toString()).toEqual("album/artist");
+        });
+
+        it("should extract nothing", () => {
+            // arrange
+            let exp = Expansion.parse(artistMetadata, "albums/{songs/album,tags}");
+            let artistProp = albumMetadata.navigationProperties.find(n => n.name == "artist");
+
+            // act
+            let [reducedExp, extracted] = exp[0].extract([artistProp]);
+
+            // assert
+            expect(reducedExp.toString()).toEqual(exp.toString());
+            expect(extracted.length).toEqual(0);
         });
     });
 });

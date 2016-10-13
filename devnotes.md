@@ -1,0 +1,4 @@
+ - Query.ByKeys: repository should remove keys from query that are already loaded
+ - Repository.remove() : implement
+ - artist{albums,albums} should fail
+ - make tags universal - not just for albums

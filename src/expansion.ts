@@ -10,6 +10,8 @@ import { Metadata } from "./metadata";
  * navigation tree is valid (as according to the given entity metadata).
  */
 export class Expansion {
+    private _toStringValue: string;
+
     /**
      * The navigation property that is expanded.
      */
@@ -28,6 +30,12 @@ export class Expansion {
     }) {
         this._property = args.property;
         this._expansions = (args.expansions || []).slice().sort((a, b) => a.property.name < b.property.name ? -1 : 1);
+
+        /**
+         * we're only going to free the expansions, so that string representations
+         * can still be lazily evaluated.
+         */
+        Object.freeze(this._expansions);
     }
 
     static equals(a: Expansion, b: Expansion): boolean {
@@ -45,31 +53,53 @@ export class Expansion {
         let y = args[1] as Expansion | Expansion[];
 
         if (x instanceof Array && y instanceof Array) {
+            // x can not be a superset if y contains more expansions
             if (x.length < y.length) return false;
 
+            // prepare the arrays for comparison
             x.sort((x, y) => x.property.name < y.property.name ? -1 : 1);
 
             let e = 0;
 
             for (let i = 0; i < x.length; ++i) {
-                let [aExp, bExp] = [x[i], y[e]];
+                let [xExp, yExp] = [x[i], y[e]];
 
-                if (bExp == null) break;
-                if (aExp.property != bExp.property) continue;
-                if (!Expansion.isSuperset(aExp, bExp)) return false;
+                // if we reached end the end of y, x must be a superset
+                if (yExp == null) break;
+                // property of x does not exist in y, x is still a superset - advance x
+                if (xExp.property != yExp.property) continue;
+                // properties of x and y match - deepen recursion
+                if (!Expansion.isSuperset(xExp, yExp)) return false;
 
                 e++;
             }
 
             return true;
         } else if (x instanceof Expansion && y instanceof Expansion) {
+            // x can't be a superset if y points to a different property
             if (x.property != y.property) return false;
+            // x can't be a superset if y has more expansions
             if (x.expansions.length < y.expansions.length) return false;
 
+            // x and y match in property and expansion length - deepen recursion
             return Expansion.isSuperset(x.expansions, y.expansions);
         } else {
             throw new Error("Expansion.isSuperSetOf(): invalid arguments");
         }
+    }
+
+    static toString(exp: Expansion): string {
+        let str = exp.property.name;
+
+        if (exp.expansions.length > 0) {
+            str += "/";
+
+            if (exp.expansions.length > 1) str += "{";
+            str += exp.expansions.map(exp => exp.toString()).join(",");
+            if (exp.expansions.length > 1) str += "}";
+        }
+
+        return str;
     }
 
     isSupersetOf(other: Expansion): boolean {
@@ -86,37 +116,41 @@ export class Expansion {
 
     /**
      * Extract all expansions (and any sub-expansions) that use any of the given
-     * navigation properties. Those expansions are removed from the tree.
+     * navigation properties.
+     * 
+     * Returns the reduced expansion and the extractions.
      */
-    extract(props: Metadata.NavigationProperty[]): Expansion.Extraction[] {
+    extract(props: Metadata.NavigationProperty[]): [Expansion, Expansion.Extraction[]] {
         let extractions = new Array<Expansion.Extraction>();
+        let expansions = new Array<Expansion>();
 
-        let i = this._expansions.length;
-
-        while (i--) {
-            let exp = this._expansions[i];
-
+        this._expansions.forEach(exp => {
             if (props.includes(exp.property)) {
                 extractions.push(new Expansion.Extraction({
                     path: new Expansion.Path({ property: this.property }),
                     extracted: exp
                 }));
-
-                this._expansions.splice(i, 1);
             } else {
-                exp.extract(props).forEach(extracted => {
+                let [subExpansion, subExtracted] = exp.extract(props);
+
+                expansions.push(subExpansion);
+
+                subExtracted.forEach(ext => {
                     extractions.push(new Expansion.Extraction({
                         path: new Expansion.Path({
                             property: this.property,
-                            next: extracted.path
+                            next: ext.path
                         }),
-                        extracted: extracted.extracted
+                        extracted: ext.extracted
                     }));
                 });
             }
-        }
+        });
 
-        return extractions;
+        return [new Expansion({
+            property: this.property,
+            expansions: expansions
+        }), extractions];
     }
 
     toPaths(): Expansion.Path[] {
@@ -131,17 +165,11 @@ export class Expansion {
     }
 
     toString(): string {
-        let str = this.property.name;
-
-        if (this.expansions.length > 0) {
-            str += "/";
-
-            if (this.expansions.length > 1) str += "{";
-            str += this.expansions.map(exp => exp.toString()).join(",");
-            if (this.expansions.length > 1) str += "}";
+        if (this._toStringValue == null) {
+            this._toStringValue = Expansion.toString(this);
         }
 
-        return str;
+        return this._toStringValue;
     }
 }
 
@@ -225,10 +253,10 @@ export module Expansion {
         get extracted(): Expansion { return this._extracted };
 
         constructor(args: {
-            path: Path;
+            path?: Path;
             extracted: Expansion;
         }) {
-            this._path = args.path;
+            this._path = args.path || null;
             this._extracted = args.extracted;
         }
     }
