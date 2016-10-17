@@ -59,7 +59,7 @@ export class Expansion {
             if (x.length < y.length) return false;
 
             // prepare the arrays for comparison
-            x.sort((x, y) => x.property.name < y.property.name ? -1 : 1);
+            x.sort((a, b) => a.property.name < b.property.name ? -1 : 1);
 
             let e = 0;
 
