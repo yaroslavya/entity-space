@@ -58,9 +58,6 @@ export class Expansion {
             // x can not be a superset if y contains more expansions
             if (x.length < y.length) return false;
 
-            // prepare the arrays for comparison
-            x.sort((a, b) => a.property.name < b.property.name ? -1 : 1);
-
             let e = 0;
 
             for (let i = 0; i < x.length; ++i) {
