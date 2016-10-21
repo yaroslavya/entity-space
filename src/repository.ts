@@ -45,9 +45,11 @@ export class Repository<K, V, M> implements IRepository<K, M> {
         };
     }
 
-    all(args: {
+    all(args?: {
         expansion?: string;
     }): Promise<Map<K, M>> {
+        args = args || {};
+
         return this._execute(new Query.All({
             entityType: this._entityType,
             expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : []
