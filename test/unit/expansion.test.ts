@@ -82,4 +82,25 @@ describe("expansion", () => {
             expect(extracted.length).toEqual(0);
         });
     });
+
+    describe("isSuperset()/isSubsetOf()", () => {
+        it("albums/{songs,tags} should be a superset of albums/{tags,songs} (manual array disorder)", () => {
+            let tags = Expansion.parse(albumMetadata, "tags")[0];
+            let songs = Expansion.parse(albumMetadata, "songs")[0];
+
+            // testing that the function sorts the expansions
+            let result = Expansion.isSuperset([tags, songs], [songs, tags]);
+
+            expect(result).toEqual(true);
+        });
+
+        it("albums/{songs,tags} should not be a superset of albums/{artist,songs}", () => {
+            let a = Expansion.parse(albumMetadata, "songs,tags");
+            let b = Expansion.parse(albumMetadata, "artist,songs");
+
+            let result = Expansion.isSuperset(a, b);
+
+            expect(result).toEqual(false);
+        });
+    });
 });

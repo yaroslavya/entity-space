@@ -1,17 +1,17 @@
 import * as _ from "lodash";
-import { Metadata } from "./metadata";
+import { EntityMetadata, NavigationProperty } from "./metadata";
 import { Expansion } from "./expansion";
 import { Extraction } from "./extraction";
 
 export abstract class Query {
-    private _entityType: Metadata;
-    get entityType(): Metadata { return this._entityType; }
+    private _entityType: EntityMetadata;
+    get entityType(): EntityMetadata { return this._entityType; }
 
     private _expansions: Expansion[];
     get expansions(): Expansion[] { return this._expansions; }
 
     constructor(args: {
-        entityType: Metadata;
+        entityType: EntityMetadata;
         expansions?: Expansion[];
     }) {
         this._entityType = args.entityType;
@@ -34,7 +34,7 @@ export abstract class Query {
         return Query.equals(this, other);
     }
 
-    extract(props: Metadata.NavigationProperty[]): [Query, Extraction[]] {
+    extract(props: NavigationProperty[]): [Query, Extraction[]] {
         let extractions = new Array<Extraction>();
         let expansions = new Array<Expansion>();
 
@@ -111,7 +111,7 @@ export module Query {
 
         constructor(args: {
             key: any;
-            entityType: Metadata;
+            entityType: EntityMetadata;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -141,7 +141,7 @@ export module Query {
 
         constructor(args: {
             keys: any[];
-            entityType: Metadata;
+            entityType: EntityMetadata;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -177,7 +177,7 @@ export module Query {
         constructor(args: {
             index: string;
             value: any;
-            entityType: Metadata;
+            entityType: EntityMetadata;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -212,7 +212,7 @@ export module Query {
 
         constructor(args: {
             indexes: Map<string, IStringable> | { [key: string]: IStringable };
-            entityType: Metadata;
+            entityType: EntityMetadata;
             expansions?: Expansion[];
         }) {
             super(args);

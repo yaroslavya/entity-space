@@ -1,6 +1,6 @@
 import { Workspace } from "./workspace";
 import { Expansion } from "./expansion";
-import { Metadata } from "./metadata";
+import { EntityMetadata } from "./metadata";
 import { Query } from "./query";
 
 export interface IRepository<K, V> {
@@ -25,13 +25,13 @@ export module Repository {
  */
 export class Repository<K, V, M> implements IRepository<K, M> {
     protected _workspace: Workspace;
-    protected _entityType: Metadata;
+    protected _entityType: EntityMetadata;
     private _executedQueries = new Map<string, Query>();
     private _mapper: Repository.IMapper<V, M>;
     private _queryExecuter: (q: Query) => Promise<any>;
 
     constructor(args: {
-        entityType: Metadata;
+        entityType: EntityMetadata;
         queryExecuter: (q: Query) => Promise<any>;
         workspace: Workspace;
         mapper?: Repository.IMapper<V, M>;

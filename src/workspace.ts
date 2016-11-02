@@ -1,15 +1,14 @@
 import * as _ from "lodash";
-import { ITypeOf } from "./common";
 import { Cache } from "./cache";
-import { Metadata } from "./metadata";
+import { Collection, EntityMetadata, Reference } from "./metadata";
 import { Expansion } from "./expansion";
 import { Query } from "./query";
 
 export class Workspace {
-    private _metadata = new Map<string, Metadata>();
+    private _metadata = new Map<string, EntityMetadata>();
     private _caches = new Map<string, Cache<any, any>>();
 
-    addType(metadata: Metadata): void {
+    addType(metadata: EntityMetadata): void {
         if (this._metadata.has(metadata.name)) {
             throw `i already have metadata named ${metadata.name}`;
         }
@@ -28,7 +27,7 @@ export class Workspace {
         this._metadata.set(metadata.name, metadata);
     }
 
-    addTypes(metadata: Metadata[]): void {
+    addTypes(metadata: EntityMetadata[]): void {
         metadata.forEach(m => this.addType(m));
     }
 
@@ -98,7 +97,7 @@ export class Workspace {
 
             if (value instanceof Array) {
                 if (value.length > 0) {
-                    let keyName = (ex.property as Metadata.Collection).backReferenceKeyName;
+                    let keyName = (ex.property as Collection).backReferenceKeyName;
                     let otherCache = this._caches.get(otherType.name);
                     otherCache.removeByIndex(keyName, value[0][keyName]);
 
@@ -259,9 +258,9 @@ export class Workspace {
     remove(args: {
         item: any;
         type: string;
-    }) : void {
+    }): void {
         let cache = this._caches.get(args.type);
-        if(cache == null) {
+        if (cache == null) {
             throw `can't remove item: type ${args.type} is not a known type`;
         }
 
@@ -275,14 +274,14 @@ export class Workspace {
     private _expand(args: {
         items: Map<any, any>;
         expansions: Expansion[];
-        ownerMetadata: Metadata;
+        ownerMetadata: EntityMetadata;
     }): void {
         args.expansions.forEach(expansion => {
             let name = expansion.property.name;
             let otherType = expansion.property.otherType;
 
-            if (expansion.property instanceof Metadata.Reference) {
-                let reference = expansion.property as Metadata.Reference;
+            if (expansion.property instanceof Reference) {
+                let reference = expansion.property as Reference;
                 let keyName = reference.keyName;
 
                 args.items.forEach(item => item[name] = this.get({
@@ -291,7 +290,7 @@ export class Workspace {
                     expansion: expansion.expansions
                 }));
             } else {
-                let collection = expansion.property as Metadata.Collection;
+                let collection = expansion.property as Collection;
                 let keyName = collection.otherType.references.find(r => r.name == collection.backReferenceName).keyName;
                 let pkName = args.ownerMetadata.primaryKey.name;
 

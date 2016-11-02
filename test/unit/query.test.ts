@@ -6,7 +6,7 @@ import {
     songMetadata,
 } from "../common/entities";
 
-describe("data-query", () => {
+describe("query", () => {
     // todo: more combinations are possiberu
     // todo: byKey & byIndex combinations are missing
     describe("isSuperset()/isSubsetOf()", () => {

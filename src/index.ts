@@ -4,5 +4,6 @@ export * from "./extraction";
 export * from "./metadata";
 export * from "./path";
 export * from "./repository";
+export * from "./util";
 export * from "./query";
 export * from "./workspace";

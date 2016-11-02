@@ -1,6 +1,6 @@
 import { Artist } from "./artist";
 import { Song } from "./song";
-import { Tag } from "./tag";
+import { AlbumTag } from "./album-tag";
 
 export interface Album {
     id: number;
@@ -8,5 +8,5 @@ export interface Album {
     artistId: number;
     artist: Artist;
     songs: Song[];
-    tags: Tag[];
+    tags: AlbumTag[];
 }

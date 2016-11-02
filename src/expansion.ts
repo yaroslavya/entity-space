@@ -1,45 +1,48 @@
-import { Metadata } from "./metadata";
+import { EntityMetadata, NavigationProperty } from "./metadata";
 import { Path } from "./path";
 import { Extraction } from "./extraction";
 
 /**
  * An expansion defines which navigation properties should be considered for an operation.
  * 
- * It contains the navigation property that is expanded upon and an array of expansions
- * that navigation property should be expanded upon further.
+ * It contains the navigation property that is being expanded
+ * and an array of further expansions on that navigation property.
  * 
- * If an expansion has been created using Expansion.parse(), it is secured that the resulting
+ * An expansion is created solely by using Expansion.parse(), that way it is secured that the resulting
  * navigation tree is valid (as according to the given entity metadata).
  */
 export class Expansion {
     private _toStringValue: string;
 
     /**
-     * The navigation property that is expanded.
+     * The navigation property that is being expanded.
      */
-    get property(): Metadata.NavigationProperty { return this._property; }
-    private _property: Metadata.NavigationProperty;
+    get property(): NavigationProperty { return this._property; }
+    private _property: NavigationProperty;
 
     /**
-     * Expansions of the navigation property.
+     * Further expansions on the navigation property.
      */
     get expansions(): Expansion[] { return this._expansions; }
     private _expansions: Expansion[];
 
-    constructor(args: {
-        property: Metadata.NavigationProperty;
+    private constructor(args: {
+        property: NavigationProperty;
         expansions?: Expansion[];
     }) {
         this._property = args.property;
         this._expansions = (args.expansions || []).slice().sort((a, b) => a.property.name < b.property.name ? -1 : 1);
 
         /**
-         * we're only going to free the expansions, so that string representations
+         * we're only going to freeze the expansions, so that string representations
          * can still be lazily evaluated.
          */
         Object.freeze(this._expansions);
     }
 
+    /**
+     * Equality comparison between two queries by checking equality of their string representations.
+     */
     static equals(a: Expansion, b: Expansion): boolean {
         return a.toString() == b.toString();
     }
@@ -58,10 +61,14 @@ export class Expansion {
             // x can not be a superset if y contains more expansions
             if (x.length < y.length) return false;
 
-            // prepare the arrays for comparison
-            // todo: expansions of Expansion class are frozen, so this will fail
-            // we still neet to ensure it is sorted
-            // x.sort((a, b) => a.property.name < b.property.name ? -1 : 1);
+            /**
+             * algorithm requires expansions to be sorted. we make copies since expansion arrays of
+             * queries & expansions are frozen.
+             */
+            x = x.slice();
+            y = y.slice();
+            x.sort((a, b) => a.property.name < b.property.name ? -1 : 1);
+            y.sort((a, b) => a.property.name < b.property.name ? -1 : 1);
 
             let e = 0;
 
@@ -70,8 +77,16 @@ export class Expansion {
 
                 // if we reached end the end of y, x must be a superset
                 if (yExp == null) break;
-                // property of x does not exist in y, x is still a superset - advance x
-                if (xExp.property != yExp.property) continue;
+
+                if (xExp.property != yExp.property) {
+                    if (x.length > y.length) {
+                        // property of x does not exist in y, x is still a superset - advance x
+                        continue;
+                    } else {
+                        // y has a property that is not in x, x can not be a superset
+                        return false;
+                    }
+                }
                 // properties of x and y match - deepen recursion
                 if (!Expansion.isSuperset(xExp, yExp)) return false;
 
@@ -106,6 +121,81 @@ export class Expansion {
         return str;
     }
 
+    /**
+     * Create expansions starting at the given entity type, crawling down
+     * navigation properties as defined in the given expansion string.
+     * 
+     * Example: Expansion.parse(artistMetadata, "albums/{songs, tags}")
+     */
+    static parse(ownerType: EntityMetadata, expansion: string): Expansion[] {
+        expansion = expansion.replace(/(\r?\n|\r)| /g, "");
+
+        return Expansion._splitExpansions(expansion).map(e => Expansion._parse(ownerType, e));
+    }
+
+    private static _parse(ownerType: EntityMetadata, expansion: string): Expansion {
+        let slashIndex = expansion.indexOf("/");
+        let name = slashIndex == -1 ? expansion : expansion.substring(0, slashIndex);
+        let property = ownerType.navigationProperties.find(p => p.name == name);
+
+        if (property == null) throw `unknown navigation property: ${name}`;
+
+        if (name.length == expansion.length) {
+            return new Expansion({ property: property });
+        }
+
+        let hasGroupedExpansions = expansion[slashIndex + 1] == "{";
+
+        if (!hasGroupedExpansions) {
+            return new Expansion({
+                property: property,
+                expansions: [Expansion._parse(property.otherType, expansion.substr(slashIndex + 1))]
+            });
+        } else {
+            let endsProperly = expansion[expansion.length - 1] == "}";
+            if (!endsProperly) throw "no closing brace in expansion";
+
+            return new Expansion({
+                property: property,
+                expansions: Expansion._splitExpansions(expansion.substring(slashIndex + 2, expansion.length - 1)).map(e => Expansion._parse(property.otherType, e))
+            });
+        }
+    }
+
+    private static _splitExpansions(str: string): string[] {
+        let cutpoints = new Array<number>();
+        let i = 0;
+        let openBraces = 0;
+
+        while (i < str.length) {
+            let c = str[i];
+
+            if (openBraces == 0 && c == ",") {
+                cutpoints.push(i);
+            } else if (c == "{") {
+                openBraces++;
+            } else if (c == "}") {
+                openBraces--;
+            }
+
+            i++;
+        }
+
+        if (cutpoints.length == 0) return [str];
+
+        let offset = 0;
+
+        return cutpoints.concat([str.length]).map(c => {
+            let e = str.substring(offset, c);
+            offset = c + 1;
+            return e;
+        });
+    }
+
+    /**
+     * Determines if this is a superset of 'other', securing that an operation on this expansion
+     * leads to a superset of 'other' when using the same operation on 'other'.
+     */
     isSupersetOf(other: Expansion): boolean {
         return Expansion.isSuperset(this, other);
     }
@@ -114,6 +204,9 @@ export class Expansion {
         return Expansion.isSuperset(other, this);
     }
 
+    /**
+     * If this expansion equals another expansion (string representation is used for equality check).
+     */
     equals(other: Expansion): boolean {
         return Expansion.equals(this, other);
     }
@@ -124,7 +217,7 @@ export class Expansion {
      * 
      * Returns the reduced expansion and the extractions.
      */
-    extract(props: Metadata.NavigationProperty[]): [Expansion, Extraction[]] {
+    extract(props: NavigationProperty[]): [Expansion, Extraction[]] {
         let extractions = new Array<Extraction>();
         let expansions = new Array<Expansion>();
 
@@ -157,6 +250,9 @@ export class Expansion {
         }), extractions];
     }
 
+    /**
+     * Returns a flattened representation of this expansion.
+     */
     toPaths(): Path[] {
         if (this.expansions.length == 0) {
             return [new Path({ property: this.property })];
@@ -174,78 +270,5 @@ export class Expansion {
         }
 
         return this._toStringValue;
-    }
-}
-
-export module Expansion {
-    /**
-     * Create expansions starting at the given entity type, crawling down
-     * navigation properties as defined in the given expansion string.
-     * 
-     * Example: Expansion.parse(artistMetadata, "albums/{songs, tags}")
-     */
-    export function parse(ownerType: Metadata, expansion: string): Expansion[] {
-        expansion = expansion.replace(/(\r?\n|\r)| /g, "");
-
-        return _splitExpansions(expansion).map(e => _parse(ownerType, e));
-    }
-
-    function _parse(ownerType: Metadata, expansion: string): Expansion {
-        let slashIndex = expansion.indexOf("/");
-        let name = slashIndex == -1 ? expansion : expansion.substring(0, slashIndex);
-        let property = ownerType.navigationProperties.find(p => p.name == name);
-
-        if (property == null) throw `unknown navigation property: ${name}`;
-
-        if (name.length == expansion.length) {
-            return new Expansion({ property: property });
-        }
-
-        let hasGroupedExpansions = expansion[slashIndex + 1] == "{";
-
-        if (!hasGroupedExpansions) {
-            return new Expansion({
-                property: property,
-                expansions: [_parse(property.otherType, expansion.substr(slashIndex + 1))]
-            });
-        } else {
-            let endsProperly = expansion[expansion.length - 1] == "}";
-            if (!endsProperly) throw "no closing brace in expansion";
-
-            return new Expansion({
-                property: property,
-                expansions: _splitExpansions(expansion.substring(slashIndex + 2, expansion.length - 1)).map(e => _parse(property.otherType, e))
-            });
-        }
-    }
-
-    function _splitExpansions(str: string): string[] {
-        let cutpoints = new Array<number>();
-        let i = 0;
-        let openBraces = 0;
-
-        while (i < str.length) {
-            let c = str[i];
-
-            if (openBraces == 0 && c == ",") {
-                cutpoints.push(i);
-            } else if (c == "{") {
-                openBraces++;
-            } else if (c == "}") {
-                openBraces--;
-            }
-
-            i++;
-        }
-
-        if (cutpoints.length == 0) return [str];
-
-        let offset = 0;
-
-        return cutpoints.concat([str.length]).map(c => {
-            let e = str.substring(offset, c);
-            offset = c + 1;
-            return e;
-        });
     }
 }
