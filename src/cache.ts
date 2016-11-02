@@ -79,8 +79,7 @@ export class Cache<K, V> {
 
     remove(item: V): void {
         this._pkMap.delete(this._getKey(item));
-
-        // todo: remove from indexes
+        this._indexes.forEach(i => i.remove(item));
     }
 
     add(item: V): V {
@@ -186,6 +185,16 @@ export module Cache {
                     newMap.set(key, newItem);
                 }
             }
+        }
+
+        remove(item: V): void {
+            let key = this._keyGetter(item);
+            if (key == null) return;
+
+            let map = this._maps.get(this._getter(item));
+            if (map == null) return;
+
+            map.delete(key);
         }
     }
 }
