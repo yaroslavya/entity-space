@@ -1,3 +1,11 @@
-dist/test
-src
-test
+/dist/test
+/reports
+/src
+/test
+/.npmignore
+/code-conventions.md
+/devnotes.md
+/karma.conf.js
+/tsconfig.json
+/tslint.json
+/webpack.config.js
