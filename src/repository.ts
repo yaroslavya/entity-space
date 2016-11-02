@@ -13,7 +13,13 @@ export interface IRepository<K, V> {
 
 export module Repository {
     export interface IMapper<V, M> {
+        /**
+         * Maps an exposed entity to the object that is put into the cache.
+         */
         toInternal: (entity: M) => V;
+        /**
+         * Maps an entity from cache to its exposed form.
+         */
         toExposed: (entity: V) => M;
     }
 }
