@@ -195,7 +195,7 @@ describe("query", () => {
                 expansions: Expansion.parse(artistMetadata, "albums/{songs/album,tags}")
             });
 
-            let albumsProp = artistMetadata.navigationProperties.find(np => np.name == "albums");
+            let albumsProp = artistMetadata.getNavigationProperty("albums");
 
             // act
             let [withoutAlbumsQuery, extracted] = q.extract([albumsProp]);
@@ -216,8 +216,8 @@ describe("query", () => {
                 expansions: Expansion.parse(artistMetadata, "albums/{songs/album,tags}")
             });
 
-            let songsProp = albumMetadata.navigationProperties.find(np => np.name == "songs");
-            let tagsProp = albumMetadata.navigationProperties.find(np => np.name == "tags");
+            let songsProp = albumMetadata.getNavigationProperty("songs");
+            let tagsProp = albumMetadata.getNavigationProperty("tags");
 
             // act
             let [withoutSongsQuery, songExtracted] = q.extract([

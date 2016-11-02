@@ -88,7 +88,8 @@ export class Workspace {
             }
         }
 
-        let stripped = this._stripNavigationProperties(args.type, args.entity);
+        let stripped = metadata.withoutNavigationProperties(args.entity);
+
         cache.add(stripped);
 
         expansions.forEach(ex => {
@@ -132,6 +133,7 @@ export class Workspace {
         }
 
         let map = new Map();
+
         map.set(item[metadata.primaryKey.name], item);
 
         this._expand({
@@ -260,6 +262,7 @@ export class Workspace {
         type: string;
     }): void {
         let cache = this._caches.get(args.type);
+
         if (cache == null) {
             throw `can't remove item: type ${args.type} is not a known type`;
         }
@@ -291,7 +294,7 @@ export class Workspace {
                 }));
             } else {
                 let collection = expansion.property as Collection;
-                let keyName = collection.otherType.references.find(r => r.name == collection.backReferenceName).keyName;
+                let keyName = collection.otherType.getReference(collection.backReferenceName).keyName;
                 let pkName = args.ownerMetadata.primaryKey.name;
 
                 args.items.forEach(item => item[name] = this.byIndex({
@@ -302,16 +305,5 @@ export class Workspace {
                 })._toArray());
             }
         });
-    }
-
-    private _stripNavigationProperties(type: string, entity: Object): Object {
-        let stripped = {} as any;
-        let metadata = this._metadata.get(type);
-
-        stripped[metadata.primaryKey.name] = entity[metadata.primaryKey.name];
-        metadata.primitives.forEach(p => stripped[p.name] = entity[p.name]);
-        metadata.references.forEach(r => stripped[r.keyName] = entity[r.keyName]);
-
-        return stripped;
     }
 }
