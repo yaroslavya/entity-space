@@ -26,7 +26,6 @@ export class Repository<K, V, M> {
     protected _workspace: Workspace;
     protected _entityType: EntityMetadata;
     private _executedQueries = new Map<string, Query>();
-    private _mapper: Repository.IMapper<V, M>;
 
     constructor(args: {
         entityType: EntityMetadata;
@@ -35,10 +34,6 @@ export class Repository<K, V, M> {
     }) {
         this._entityType = args.entityType;
         this._workspace = args.workspace;
-        this._mapper = args.mapper || {
-            toInternal: (entity: M) => entity as any as V,
-            toExposed: (entity: V) => entity as any as M
-        };
     }
 
     all(args?: {
@@ -139,6 +134,20 @@ export class Repository<K, V, M> {
     }
 
     /**
+     * To be implemented by child class.
+     */
+    protected toExposed(internal: V): M {
+        return internal as any;
+    }
+
+    /**
+     * To be implemented by child class.
+     */
+    protected toInternal(exposed: M): V {
+        return exposed as any;
+    }
+
+    /**
      * Execute a query which is first checked against cache availability.
      * If its or a superset has been executed already, cached data is returned.
      * Otherwise, data is loaded from the service (or whatever the inheritor implemented),
@@ -158,7 +167,7 @@ export class Repository<K, V, M> {
                         let key = entity[keyName];
 
                         try {
-                            let exposed = this._mapper.toExposed(entity);
+                            let exposed = this.toExposed(entity);
                             this._workspace.add({
                                 entity: entity,
                                 type: query.entityType.name,
