@@ -3,19 +3,6 @@ import { Expansion } from "./expansion";
 import { EntityMetadata } from "./metadata";
 import { Query } from "./query";
 
-export module Repository {
-    export interface IMapper<V, M> {
-        /**
-         * Maps an exposed entity to the object that is put into the cache.
-         */
-        toInternal: (entity: M) => V;
-        /**
-         * Maps an entity from cache to its exposed form.
-         */
-        toExposed: (entity: V) => M;
-    }
-}
-
 /**
  * A helper class for a common repository. Not very well documented (yet).
  * K = primitive type of id
@@ -23,14 +10,17 @@ export module Repository {
  * M = type exposed to consumer
  */
 export class Repository<K, V, M> {
-    protected _workspace: Workspace;
-    protected _entityType: EntityMetadata;
+    get workspace(): Workspace { return this._workspace; }
+    private _workspace: Workspace;
+
+    get entityType(): EntityMetadata { return this._entityType; }
+    private _entityType: EntityMetadata;
+
     private _executedQueries = new Map<string, Query>();
 
     constructor(args: {
         entityType: EntityMetadata;
         workspace: Workspace;
-        mapper?: Repository.IMapper<V, M>;
     }) {
         this._entityType = args.entityType;
         this._workspace = args.workspace;
@@ -42,8 +32,8 @@ export class Repository<K, V, M> {
         args = args || {};
 
         return this.execute(new Query.All({
-            entityType: this._entityType,
-            expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : []
+            entityType: this.entityType,
+            expansions: args.expansion != null ? Expansion.parse(this.entityType, args.expansion) : []
         }));
     }
 
@@ -52,8 +42,8 @@ export class Repository<K, V, M> {
         expansion?: string;
     }): Promise<M> {
         return this.execute(new Query.ByKey({
-            entityType: this._entityType,
-            expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
+            entityType: this.entityType,
+            expansions: args.expansion != null ? Expansion.parse(this.entityType, args.expansion) : [],
             key: args.key
         })).then(result => result.get(args.key));
     }
@@ -63,8 +53,8 @@ export class Repository<K, V, M> {
         expansion?: string;
     }): Promise<Map<K, M>> {
         return this.execute(new Query.ByKeys({
-            entityType: this._entityType,
-            expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
+            entityType: this.entityType,
+            expansions: args.expansion != null ? Expansion.parse(this.entityType, args.expansion) : [],
             keys: args.keys
         }));
     }
@@ -84,15 +74,15 @@ export class Repository<K, V, M> {
             return this.all({ expansion: args.expansion });
         } else if (indexes.size == 1) {
             return this.execute(new Query.ByIndex({
-                entityType: this._entityType,
-                expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
+                entityType: this.entityType,
+                expansions: args.expansion != null ? Expansion.parse(this.entityType, args.expansion) : [],
                 index: indexes.keys().next().value,
                 value: indexes.values().next().value
             }));
         } else {
             return this.execute(new Query.ByIndexes({
-                entityType: this._entityType,
-                expansions: args.expansion != null ? Expansion.parse(this._entityType, args.expansion) : [],
+                entityType: this.entityType,
+                expansions: args.expansion != null ? Expansion.parse(this.entityType, args.expansion) : [],
                 indexes: indexes
             }));
         }
@@ -102,35 +92,35 @@ export class Repository<K, V, M> {
      * To be implemented by child class.
      */
     protected loadAll(q: Query.All): Promise<V[]> {
-        throw `loading all entities of ${this._entityType.name} is not supported`;
+        throw `loading all entities of ${this.entityType.name} is not supported`;
     }
 
     /**
      * To be implemented by child class.
      */
     protected loadOne(q: Query.ByKey): Promise<V> {
-        throw `loading one entity of ${this._entityType.name} by its primary key is not supported`;
+        throw `loading one entity of ${this.entityType.name} by its primary key is not supported`;
     }
 
     /**
      * To be implemented by child class.
      */
     protected loadMany(q: Query.ByKeys): Promise<V[]> {
-        throw `loading multiple entities of ${this._entityType.name} by their primary keys is not supported`;
+        throw `loading multiple entities of ${this.entityType.name} by their primary keys is not supported`;
     }
 
     /**
      * To be implemented by child class.
      */
     protected loadByIndex(q: Query.ByIndex): Promise<V[]> {
-        throw `loading multiple entities of ${this._entityType.name} by their index '${q.index}' is not supported`;
+        throw `loading multiple entities of ${this.entityType.name} by their index '${q.index}' is not supported`;
     }
 
     /**
      * To be implemented by child class.
      */
     protected loadByIndexes(q: Query.ByIndexes): Promise<V[]> {
-        throw `loading multiple entities of ${this._entityType.name} by multiple indexes is not supported`;
+        throw `loading multiple entities of ${this.entityType.name} by multiple indexes is not supported`;
     }
 
     /**
@@ -156,19 +146,19 @@ export class Repository<K, V, M> {
     protected execute(query: Query): Promise<Map<K, M>> {
         return new Promise<Map<K, M>>((resolve, reject) => {
             if (this._executedQueries.has(query.toString()) || this._hasSupersetQueryOf(query)) {
-                this._workspace.execute(query).then(resolve, reject);
+                this.workspace.execute(query).then(resolve, reject);
             } else {
                 this._execute(query).then(result => {
                     this._executedQueries.set(query.toString(), query);
                     let map = new Map<K, M>();
-                    let keyName = this._entityType.primaryKey.name;
+                    let keyName = this.entityType.primaryKey.name;
 
                     result.forEach(entity => {
                         let key = entity[keyName];
 
                         try {
                             let exposed = this.toExposed(entity);
-                            this._workspace.add({
+                            this.workspace.add({
                                 entity: entity,
                                 type: query.entityType.name,
                                 expansion: query.expansions
