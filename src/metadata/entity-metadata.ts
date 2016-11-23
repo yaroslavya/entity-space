@@ -26,11 +26,7 @@ export class EntityMetadata {
     get collections(): Collection[] { return this._collections._toArray(); };
     private _collections: Map<string, Collection>;
 
-    constructor(args: {
-        name: string;
-        primaryKey: Primitive.ICtorArgs;
-        primitives?: Primitive.ICtorArgs[];
-    }) {
+    constructor(args: EntityMetadata.ICtorArgs) {
         this._name = args.name;
         this._primaryKey = new Primitive(args.primaryKey);
         this._properties = new Map<string, Property>();
@@ -40,6 +36,8 @@ export class EntityMetadata {
         this._navigationProperties = new Map<string, NavigationProperty>();
 
         (args.primitives || []).forEach(a => this.addPrimitive(a));
+        (args.references || []).forEach(a => this.addReference(a));
+        (args.collections || []).forEach(a => this.addCollection(a));
     }
 
     addPrimitive(args: Primitive.ICtorArgs): void {
@@ -100,5 +98,15 @@ export class EntityMetadata {
     private _addNavigationProperty(nav: NavigationProperty): void {
         this._navigationProperties.set(nav.name.toLocaleLowerCase(), nav);
         this._addProperty(nav);
+    }
+}
+
+export module EntityMetadata {
+    export interface ICtorArgs {
+        name: string;
+        primaryKey: Primitive.ICtorArgs;
+        primitives?: Primitive.ICtorArgs[];
+        references?: Reference.ICtorArgs[];
+        collections?: Collection.ICtorArgs[];
     }
 }

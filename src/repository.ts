@@ -1,6 +1,6 @@
 import { Workspace } from "./workspace";
 import { Expansion } from "./expansion";
-import { EntityMetadata } from "./metadata";
+import { getEntityMetadata, IEntityType } from "./metadata";
 import { Query } from "./query";
 
 /**
@@ -13,13 +13,13 @@ export class Repository<K, V, M> {
     get workspace(): Workspace { return this._workspace; }
     private _workspace: Workspace;
 
-    get entityType(): EntityMetadata { return this._entityType; }
-    private _entityType: EntityMetadata;
+    get entityType(): IEntityType { return this._entityType; }
+    private _entityType: IEntityType;
 
     private _executedQueries = new Map<string, Query>();
 
     constructor(args: {
-        entityType: EntityMetadata;
+        entityType: IEntityType;
         workspace: Workspace;
     }) {
         this._entityType = args.entityType;
@@ -151,7 +151,7 @@ export class Repository<K, V, M> {
                 this._execute(query).then(result => {
                     this._executedQueries.set(query.toString(), query);
                     let map = new Map<K, M>();
-                    let keyName = this.entityType.primaryKey.name;
+                    let keyName = getEntityMetadata(this.entityType).primaryKey.name;
 
                     result.forEach(entity => {
                         let key = entity[keyName];
@@ -160,7 +160,7 @@ export class Repository<K, V, M> {
                             let exposed = this.toExposed(entity);
                             this.workspace.add({
                                 entity: entity,
-                                type: query.entityType.name,
+                                type: query.entityType,
                                 expansion: query.expansions
                             });
 

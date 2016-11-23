@@ -1,10 +1,5 @@
-import { Query, Expansion } from "../../src/";
-
-import {
-    albumMetadata,
-    artistMetadata,
-    songMetadata,
-} from "../common/entities";
+import { getEntityMetadata, Query, Expansion } from "../../src/";
+import { Artist, Album } from "../common";
 
 describe("query", () => {
     // todo: more combinations are possiberu
@@ -12,12 +7,12 @@ describe("query", () => {
     describe("isSuperset()/isSubsetOf()", () => {
         it("all:artist/albums/{songs,tags} should be superset of all:artist", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.All({
-                entityType: artistMetadata
+                entityType: Artist
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -28,13 +23,13 @@ describe("query", () => {
 
         it("all:artist/albums/{songs,tags} should be superset of all:artist/albums", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -45,13 +40,13 @@ describe("query", () => {
 
         it("all:artist/albums/{songs,tags} should be superset of all:artist/albums/songs", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/songs")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/songs")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -62,13 +57,13 @@ describe("query", () => {
 
         it("all:artist/albums/{songs,tags} should be superset of all:artist/albums/{songs,tags}", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -79,13 +74,13 @@ describe("query", () => {
 
         it("all:artist/albums/{songs,tags} should be superset of all:artist/albums/{tags,songs}", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -96,14 +91,14 @@ describe("query", () => {
 
         it("all:artist/albums/{songs,tags} should be superset of byKey:artist/albums/{songs,tags}", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             let b = new Query.ByKey({
                 key: 1,
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -114,15 +109,15 @@ describe("query", () => {
 
         it("all:albums/{songs,tags} should be superset of byIndex:albums/{songs,tags}", () => {
             let a = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(albumMetadata, "songs,tags")
+                entityType: Artist,
+                expansions: Expansion.parse(Album, "songs,tags")
             });
 
             let b = new Query.ByIndex({
                 index: "artistId",
                 value: 1,
-                entityType: artistMetadata,
-                expansions: Expansion.parse(albumMetadata, "songs,tags")
+                entityType: Artist,
+                expansions: Expansion.parse(Album, "songs,tags")
             });
 
             expect(a.isSuperSetOf(b)).toEqual(true);
@@ -135,8 +130,8 @@ describe("query", () => {
     describe("toString()", () => {
         it("all: Artist/albums/{songs,tags}", () => {
             let q = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(q.toString()).toEqual("Artist/albums/{songs,tags}");
@@ -145,8 +140,8 @@ describe("query", () => {
         it("byKey: Artist(64)/albums/{songs,tags}", () => {
             let q = new Query.ByKey({
                 key: 64,
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(q.toString()).toEqual("Artist(64)/albums/{songs,tags}");
@@ -155,8 +150,8 @@ describe("query", () => {
         it("byKeys: Artist(64,1337,42,23)/albums/{songs,tags}", () => {
             let q = new Query.ByKeys({
                 keys: [64, 1337, 42, 23],
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(q.toString()).toEqual("Artist(64,1337,42,23)/albums/{songs,tags}");
@@ -166,8 +161,8 @@ describe("query", () => {
             let q = new Query.ByIndex({
                 index: "theIndex",
                 value: "theValue",
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(q.toString()).toEqual("Artist(theIndex:theValue)/albums/{songs,tags}");
@@ -179,8 +174,8 @@ describe("query", () => {
                     khaz: 64,
                     mo: "dan"
                 },
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs,tags}")
             });
 
             expect(q.toString()).toEqual("Artist(khaz:64,mo:dan)/albums/{songs,tags}");
@@ -191,11 +186,11 @@ describe("query", () => {
         it("should extract 1st level expansion", () => {
             // arrange
             let q = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs/album,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs/album,tags}")
             });
 
-            let albumsProp = artistMetadata.getNavigationProperty("albums");
+            let albumsProp = getEntityMetadata(Artist).getNavigationProperty("albums");
 
             // act
             let [withoutAlbumsQuery, extracted] = q.extract([albumsProp]);
@@ -212,12 +207,12 @@ describe("query", () => {
         it("should extract 2nd level expansions", () => {
             // arrange
             let q = new Query.All({
-                entityType: artistMetadata,
-                expansions: Expansion.parse(artistMetadata, "albums/{songs/album,tags}")
+                entityType: Artist,
+                expansions: Expansion.parse(Artist, "albums/{songs/album,tags}")
             });
 
-            let songsProp = albumMetadata.getNavigationProperty("songs");
-            let tagsProp = albumMetadata.getNavigationProperty("tags");
+            let songsProp = getEntityMetadata(Album).getNavigationProperty("songs");
+            let tagsProp = getEntityMetadata(Album).getNavigationProperty("tags");
 
             // act
             let [withoutSongsQuery, songExtracted] = q.extract([

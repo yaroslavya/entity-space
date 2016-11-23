@@ -1,4 +1,4 @@
-import { EntityMetadata, NavigationProperty } from "./metadata";
+import { getEntityMetadata, IEntityType, NavigationProperty } from "./metadata";
 import { Path } from "./path";
 import { Extraction } from "./extraction";
 
@@ -127,16 +127,16 @@ export class Expansion {
      * 
      * Example: Expansion.parse(artistMetadata, "albums/{songs, tags}")
      */
-    static parse(ownerType: EntityMetadata, expansion: string): Expansion[] {
+    static parse(ownerType: IEntityType, expansion: string): Expansion[] {
         expansion = expansion.replace(/(\r?\n|\r)| /g, "");
 
         return Expansion._splitExpansions(expansion).map(e => Expansion._parse(ownerType, e));
     }
 
-    private static _parse(ownerType: EntityMetadata, expansion: string): Expansion {
+    private static _parse(ownerType: IEntityType, expansion: string): Expansion {
         let slashIndex = expansion.indexOf("/");
         let name = slashIndex == -1 ? expansion : expansion.substring(0, slashIndex);
-        let property = ownerType.getNavigationProperty(name);
+        let property = getEntityMetadata(ownerType).getNavigationProperty(name);
 
         if (property == null) throw `unknown navigation property: ${name}`;
 

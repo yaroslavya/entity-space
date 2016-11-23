@@ -1,4 +1,4 @@
-import { EntityMetadata } from "./entity-metadata";
+import { IEntityType } from "./entity-decorator";
 import { NavigationProperty } from "./navigation-property";
 
 export class Collection extends NavigationProperty {
@@ -24,6 +24,6 @@ export module Collection {
         backReferenceKeyName: string;
         backReferenceName: string;
         name: string;
-        otherType: EntityMetadata;
+        otherType: () => IEntityType;
     }
 }

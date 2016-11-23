@@ -1,14 +1,10 @@
-import {
-    albumMetadata,
-    artistMetadata,
-    songMetadata
-} from "../common/entities";
+import { getEntityMetadata, EntityMetadata } from "../../src";
+import { Album, Artist, Song } from "../common/entities";
 
-
-describe("entity-metadata", () => {
-    it("should have proper type name", () => {
-        expect(albumMetadata.name).toEqual("Album");
-        expect(artistMetadata.name).toEqual("Artist");
-        expect(songMetadata.name).toEqual("Song");
+describe("getEntityMetadata", () => {
+    it("should work for Album, Artist, Song", () => {
+        expect(getEntityMetadata(Album) instanceof EntityMetadata).toBe(true);
+        expect(getEntityMetadata(Artist) instanceof EntityMetadata).toBe(true);
+        expect(getEntityMetadata(Song) instanceof EntityMetadata).toBe(true);
     });
 });

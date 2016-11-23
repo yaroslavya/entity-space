@@ -1,4 +1,4 @@
-import { EntityMetadata } from "./entity-metadata";
+import { IEntityType } from "./entity-decorator";
 import { NavigationProperty } from "./navigation-property";
 
 export class Reference extends NavigationProperty {
@@ -19,6 +19,6 @@ export module Reference {
     export interface ICtorArgs {
         keyName: string;
         name: string;
-        otherType: EntityMetadata;
+        otherType: () => IEntityType;
     }
 }

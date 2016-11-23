@@ -1,26 +1,20 @@
 import { Workspace } from "../../src";
 import {
-    Album, albumMetadata,
-    Artist, artistMetadata,
-    Song, songMetadata
+    Album,
+    Artist,
+    Song
 } from "../common/entities";
 
 
 // todo: do expects
-xdescribe("data-workspace", () => {
+describe("data-workspace", () => {
     it("byIndex()", () => {
-        let dws = new Workspace();
-        dws.addType(albumMetadata);
-        dws.addType(artistMetadata);
-        dws.addType(songMetadata);
-
-        let numArtists = 10;
+        let ws = new Workspace();
+        let numArtists = 200;
         let numAlbums = 3;
         let numSongs = 10;
-
         let albumId = 1;
         let songId = 1;
-        let now = new Date();
 
         for (let i = 0; i < numArtists; ++i) {
             let artist = <Artist>{
@@ -58,39 +52,31 @@ xdescribe("data-workspace", () => {
 
             artist.albums = albums;
 
-            dws.add({
+            ws.add({
                 entity: artist,
-                type: "Artist",
+                type: Artist,
                 expansion: `albums/songs`
             });
         }
 
-        console.log(`adding took ${new Date().getTime() - now.getTime()}ms`);
-        now = new Date();
+        let albums = ws.byIndex<Album>({
+            type: Album,
+            index: "artistId",
+            value: 64,
+            expansion: `songs,artist`
+        })._toArray();
 
-        // let artists = dws.byIndex({
-        //     type: Album,
-        //     index: "artistId",
-        //     value: 300,
-        //     expansion: `songs,artist`
-        // });
-
-        console.log(`loading took ${new Date().getTime() - now.getTime()}ms`);
+        expect(albums.length).toBe(numAlbums);
+        expect(albums.map(a => a.songs.length).reduce((a, b) => a + b)).toBe(numAlbums * numSongs);
     });
 
     it("all()", () => {
-        let dws = new Workspace();
-        dws.addType(albumMetadata);
-        dws.addType(artistMetadata);
-        dws.addType(songMetadata);
-
+        let ws = new Workspace();
         let numArtists = 10;
         let numAlbums = 3;
         let numSongs = 10;
-
         let albumId = 1;
         let songId = 1;
-        let now = new Date();
 
         for (let i = 0; i < numArtists; ++i) {
             let artist = <Artist>{
@@ -129,22 +115,22 @@ xdescribe("data-workspace", () => {
 
             artist.albums = albums;
 
-            dws.add({
+            ws.add({
                 entity: artist,
-                type: "Artist",
+                type: Artist,
                 expansion: `albums/songs`
             });
         }
 
-        console.log(`adding took ${new Date().getTime() - now.getTime()}ms`);
-        now = new Date();
-
-        let artists = dws.all({
-            type: "Artist",
+        let artists = ws.all<Artist>({
+            type: Artist,
             expansion: `albums/{songs/album, artist}`
-        });
+        })._toArray();
 
-        console.log(`loading took ${new Date().getTime() - now.getTime()}ms`);
-        // console.log(artists);
+        let numLoadedAlbums = artists.map(a => a.albums.length).reduce((p, c) => p + c);
+        let numLoadedSongs = artists.map(a => a.albums.map(a => a.songs.length).reduce((a, c) => a + c)).reduce((p, c) => p + c);
+
+        expect(numLoadedAlbums).toBe(numArtists * numAlbums);
+        expect(numLoadedSongs).toBe(numArtists * numAlbums * numSongs);
     });
 });

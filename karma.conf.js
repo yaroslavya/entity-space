@@ -13,7 +13,7 @@ module.exports = function (config) {
             "test/main.ts"
         ],
         preprocessors: {
-            "**/*.ts": ["webpack"],
+            "**/*.ts": ["webpack"]
         },
         reporters: ["progress", "html"],
         htmlReporter: {

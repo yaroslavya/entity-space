@@ -1,15 +1,10 @@
-import { Expansion } from "../../src";
-
-import {
-    albumMetadata,
-    artistMetadata,
-    songMetadata
-} from "../common/entities";
+import { Expansion, IEntityType, getEntityMetadata } from "../../src";
+import { Artist, Album, Song } from "../common";
 
 describe("expansion", () => {
     describe("toPaths()", () => {
         it("albums/{songs/album/{artist,songs},tags} should equal albums/songs/album/artist,albums/songs/album/songs,albums/tags", () => {
-            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/{artist,songs},tags}");
+            let exp = Expansion.parse(Artist, "albums/{songs/album/{artist,songs},tags}");
             let paths = exp[0].toPaths();
 
             expect(paths.map(p => p.toString()).join(",")).toEqual("albums/songs/album/artist,albums/songs/album/songs,albums/tags");
@@ -18,19 +13,19 @@ describe("expansion", () => {
 
     describe("toString()", () => {
         it("albums should equal albums", () => {
-            let exp = Expansion.parse(artistMetadata, "albums");
+            let exp = Expansion.parse(Artist, "albums");
 
             expect(exp.toString()).toEqual("albums");
         });
 
         it("albums/songs should equal albums/songs", () => {
-            let exp = Expansion.parse(artistMetadata, "albums/songs");
+            let exp = Expansion.parse(Artist, "albums/songs");
 
             expect(exp.toString()).toEqual("albums/songs");
         });
 
         it("albums/{songs,tags} should equal albums/{songs,tags}", () => {
-            let exp = Expansion.parse(artistMetadata, "albums/{songs,tags}");
+            let exp = Expansion.parse(Artist, "albums/{songs,tags}");
 
             expect(exp.toString()).toEqual("albums/{songs,tags}");
         });
@@ -39,8 +34,8 @@ describe("expansion", () => {
     describe("extract()", () => {
         it("should extract 1st level expansion", () => {
             // arrange
-            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/artist,tags}");
-            let songsProp = albumMetadata.getNavigationProperty("songs");
+            let exp = Expansion.parse(Artist, "albums/{songs/album/artist,tags}");
+            let songsProp = getEntityMetadata(Album).getNavigationProperty("songs");
 
             // act
             let [reducedExp, extracted] = exp[0].extract([songsProp]);
@@ -55,8 +50,8 @@ describe("expansion", () => {
 
         it("should extract 2nd level expansion", () => {
             // arrange
-            let exp = Expansion.parse(artistMetadata, "albums/{songs/album/artist,tags}");
-            let albumProp = songMetadata.getNavigationProperty("album");
+            let exp = Expansion.parse(Artist, "albums/{songs/album/artist,tags}");
+            let albumProp = getEntityMetadata(Song).getNavigationProperty("album");
 
             // act
             let [reducedExp, extracted] = exp[0].extract([albumProp]);
@@ -71,8 +66,8 @@ describe("expansion", () => {
 
         it("should extract nothing", () => {
             // arrange
-            let exp = Expansion.parse(artistMetadata, "albums/{songs/album,tags}");
-            let artistProp = albumMetadata.getNavigationProperty("artist");
+            let exp = Expansion.parse(Artist, "albums/{songs/album,tags}");
+            let artistProp = getEntityMetadata(Album).getNavigationProperty("artist");
 
             // act
             let [reducedExp, extracted] = exp[0].extract([artistProp]);
@@ -85,8 +80,8 @@ describe("expansion", () => {
 
     describe("isSuperset()/isSubsetOf()", () => {
         it("albums/{songs,tags} should be a superset of albums/{tags,songs} (manual array disorder)", () => {
-            let tags = Expansion.parse(albumMetadata, "tags")[0];
-            let songs = Expansion.parse(albumMetadata, "songs")[0];
+            let tags = Expansion.parse(Album, "tags")[0];
+            let songs = Expansion.parse(Album, "songs")[0];
 
             // testing that the function sorts the expansions
             let result = Expansion.isSuperset([tags, songs], [songs, tags]);
@@ -95,8 +90,8 @@ describe("expansion", () => {
         });
 
         it("albums/{songs,tags} should not be a superset of albums/{artist,songs}", () => {
-            let a = Expansion.parse(albumMetadata, "songs,tags");
-            let b = Expansion.parse(albumMetadata, "artist,songs");
+            let a = Expansion.parse(Album, "songs,tags");
+            let b = Expansion.parse(Album, "artist,songs");
 
             let result = Expansion.isSuperset(a, b);
 

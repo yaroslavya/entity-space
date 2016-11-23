@@ -1,13 +1,13 @@
-import { EntityMetadata } from "./entity-metadata";
+import { IEntityType } from "./entity-decorator";
 import { Property } from "./property";
 
 export class NavigationProperty extends Property {
-    private _otherType: EntityMetadata;
-    get otherType(): EntityMetadata { return this._otherType };
+    private _otherType: () => IEntityType;
+    get otherType(): IEntityType { return this._otherType(); };
 
     constructor(args: {
         name: string;
-        otherType: EntityMetadata;
+        otherType: () => IEntityType;
     }) {
         super({ name: args.name });
 

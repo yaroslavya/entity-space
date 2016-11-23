@@ -1,17 +1,17 @@
 import * as _ from "lodash";
-import { EntityMetadata, NavigationProperty } from "./metadata";
+import { getEntityMetadata, EntityMetadata, IEntityType, NavigationProperty } from "./metadata";
 import { Expansion } from "./expansion";
 import { Extraction } from "./extraction";
 
 export abstract class Query {
-    private _entityType: EntityMetadata;
-    get entityType(): EntityMetadata { return this._entityType; }
+    private _entityType: IEntityType;
+    get entityType(): IEntityType { return this._entityType; }
 
     private _expansions: Expansion[];
     get expansions(): Expansion[] { return this._expansions; }
 
     constructor(args: {
-        entityType: EntityMetadata;
+        entityType: IEntityType;
         expansions?: Expansion[];
     }) {
         this._entityType = args.entityType;
@@ -78,7 +78,7 @@ export abstract class Query {
     }): string {
         args = args || {} as any;
 
-        let str = this.entityType.name;
+        let str = getEntityMetadata(this.entityType).name;
 
         if (args.suffix != null) {
             str += `(${args.suffix})`;
@@ -111,7 +111,7 @@ export module Query {
 
         constructor(args: {
             key: any;
-            entityType: EntityMetadata;
+            entityType: IEntityType;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -141,7 +141,7 @@ export module Query {
 
         constructor(args: {
             keys: any[];
-            entityType: EntityMetadata;
+            entityType: IEntityType;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -177,7 +177,7 @@ export module Query {
         constructor(args: {
             index: string;
             value: any;
-            entityType: EntityMetadata;
+            entityType: IEntityType;
             expansions?: Expansion[];
         }) {
             super(args);
@@ -212,7 +212,7 @@ export module Query {
 
         constructor(args: {
             indexes: Map<string, IStringable> | { [key: string]: IStringable };
-            entityType: EntityMetadata;
+            entityType: IEntityType;
             expansions?: Expansion[];
         }) {
             super(args);
