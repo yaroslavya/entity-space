@@ -144,39 +144,39 @@ export class Repository<K, V, M> {
      * which is then added and returned. 
      */
     protected execute(query: Query): Promise<Map<K, M>> {
-        return new Promise<Map<K, M>>((resolve, reject) => {
+        return new Promise<Map<K, V>>((resolve, reject) => {
             if (this._executedQueries.has(query.toString()) || this._hasSupersetQueryOf(query)) {
                 this.workspace.execute(query).then(resolve, reject);
             } else {
-                this._execute(query).then(result => {
-                    this._executedQueries.set(query.toString(), query);
-                    let map = new Map<K, M>();
+                this._executeToService(query).then(result => {
+                    let map = new Map<any, any>();
                     let keyName = getEntityMetadata(this.entityType).primaryKey.name;
 
                     result.forEach(entity => {
                         let key = entity[keyName];
 
                         try {
-                            let exposed = this.toExposed(entity);
                             this.workspace.add({
                                 entity: entity,
                                 type: query.entityType,
                                 expansion: query.expansions
                             });
 
-                            map.set(key, exposed);
+                            map.set(key, entity);
                         } catch (e) {
                             console.warn(`failed adding part of payload for query ${query.toString()} @ entity #${key}: ${e}`);
                         }
                     });
 
+                    this._executedQueries.set(query.toString(), query);
+
                     resolve(map);
                 }, reject);
             }
-        });
+        }).then(result => result._map(x => this.toExposed(x)));
     }
 
-    private _execute(q: Query): Promise<V[]> {
+    private _executeToService(q: Query): Promise<V[]> {
         if (q instanceof Query.All) {
             return this.loadAll(q);
         } else if (q instanceof Query.ByKey) {
