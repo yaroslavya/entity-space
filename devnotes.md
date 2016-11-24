@@ -3,3 +3,4 @@
  - workspace.remove() with expansion? or what about 1-n relations?
  - checking query type by "instanceof" kinda sucks. consider using discriminated union approach.
  - create a query cache that handles checking if a query can be loaded from workspace or not
+ - make use of lazy reference (@ util)
