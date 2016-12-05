@@ -73,7 +73,7 @@ export class Expansion {
             for (let i = 0; i < x.length; ++i) {
                 let [xExp, yExp] = [x[i], y[i]];
 
-                // if we reached end the end of y, x must be a superset
+                // if we reached the end of y, x must be a superset
                 if (yExp == null) break;
 
                 if (xExp.property != yExp.property) {
